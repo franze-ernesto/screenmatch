@@ -7,12 +7,7 @@ import br.com.alura.screenmatch.model.Episodio;
 import br.com.alura.screenmatch.service.ConsumoApi;
 import br.com.alura.screenmatch.service.ConverteDados;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Principal {
@@ -27,14 +22,15 @@ public class Principal {
 
     public void exibeMenu() {
         System.out.println("\nMenu Principal");
-        System.out.println("Digite o nome da série a ser buscada: ");
-        var nomeSerie = sc.nextLine();
 
-        var json = consumoApi.obterDados(ENDERECO + nomeSerie.replace(" ", "+") + API_KEY + System.getenv("API_KEY"));
+        try{
+            System.out.println("Digite o nome da série a ser buscada: ");
+            var nomeSerie = sc.nextLine();
 
-        DadosSerie dados = conversor.converteDados(json, DadosSerie.class);
-        System.out.println(dados);
+            var json = consumoApi.obterDados(ENDERECO + nomeSerie.replace(" ", "+") + API_KEY + System.getenv("API_KEY"));
 
+            DadosSerie dados = conversor.converteDados(json, DadosSerie.class);
+            System.out.println(dados);
 
         List<DadosTemporada> temporadas = new ArrayList<>();
 
@@ -46,25 +42,12 @@ public class Principal {
         }
         temporadas.forEach(System.out::println);
 
-//        for (int i = 0; i < dados.totalTemporadas(); i++) {
-//            List<DadosEpisodio> episodiosTemporada = temporadas.get(i).episodios();
-//            for (int j = 0; j < episodiosTemporada.size(); j++) {
-//                System.out.println(episodiosTemporada.get(j).nome() );
-//            }
-//
-//        }
         temporadas.forEach(t -> t.episodios().forEach(e -> System.out.println(e.titulo())));
 
         List<DadosEpisodio> dadosEpisodios = temporadas.stream()
                 .flatMap(t -> t.episodios().stream())
                 .collect(Collectors.toList());
 
-        System.out.println("\nTop 5 Episodios");
-        dadosEpisodios.stream()
-                .filter(e -> !e.avaliacao().equalsIgnoreCase("N/A"))
-                .sorted(Comparator.comparing(DadosEpisodio::avaliacao).reversed())
-                .limit(5)
-                .forEach(System.out::println);
 
         List<Episodio> episodios = temporadas.stream()
                 .flatMap(t -> t.episodios().stream()
@@ -73,20 +56,28 @@ public class Principal {
 
         episodios.forEach(System.out::println);
 
-        System.out.println("A partir de qual ano você deseja ver os Episódios? ");
-        var ano = sc.nextInt();
-        sc.nextLine();
 
-        LocalDate dataBusca = LocalDate.of(ano,  1, 1);
 
-        DateTimeFormatter formatador = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        episodios.stream()
-                .filter(e -> e.getDataLancamento() != null && e.getDataLancamento().isAfter(dataBusca))
-                .forEach(e -> System.out.println(
-                        "Temporada: " + e.getTemporada() +
-                                "Episodio: " + e.getTitulo() +
-                                "Data lançamento: " + e.getDataLancamento().format(formatador)
-                ));
+        Map<Integer, Double> avaliacoesPorTemporada = episodios.stream()
+                .filter(e -> e.getAvaliacao() > 0.0)
+                .collect(Collectors.groupingBy(Episodio::getTemporada,
+                        Collectors.averagingDouble(Episodio::getAvaliacao)));
+
+            System.out.println(avaliacoesPorTemporada);
+
+            DoubleSummaryStatistics estat = episodios.stream()
+                    .filter(e -> e.getAvaliacao() > 0.0)
+                    .collect(Collectors.summarizingDouble(Episodio::getAvaliacao));
+
+            System.out.println("Média: " + estat.getAverage());
+            System.out.println("Melhor episódio: " + estat.getMax());
+            System.out.println("Pior episódio: " + estat.getMin());
+            System.out.println("Quantidade: " + estat.getCount());
+
+        } catch (NullPointerException e) {
+            System.out.println("Série Não Encontrada");
+        }
+
 
     }
 
