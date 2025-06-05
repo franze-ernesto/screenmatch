@@ -15,6 +15,8 @@ public class OmdbClientFilme {
 
     @Value("${omdb.api.key}")
     private String apiKey;
+    double somaDasAvaliacoes = 0.0;
+    int totalDeAvaliacoes = 0;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -27,22 +29,34 @@ public class OmdbClientFilme {
 
         }
 
+        JsonNode ratings = response.get("Ratings");
+        if (ratings != null && ratings.isArray()) {
+            for (JsonNode rating : ratings) {
+                String source = rating.get("Source").asText();
+                String value = rating.get("Value").asText();
+                if (source.equals("Internet Movie Database")) {
+                    String[] partes = value.split("/");
+                    somaDasAvaliacoes = Double.parseDouble(partes[0]);
+                    totalDeAvaliacoes = 1;
+                }
+            }
+        }
+
         return new DataResponseFilme(
                 response.get("Title").asText(),
                 response.get("Year").asText(),
                 response.get("Director").asText(),
                 response.get("Genre").asText(),
-                0.0,
-                0,
+                somaDasAvaliacoes,
+                totalDeAvaliacoes,
                 converterDuracao(response.get("Runtime").asText())
-
         );
-
     }
 
     private int converterDuracao(String duracao) {
         try {
-            return Integer.parseInt(duracao.replaceAll("minutes", ""));
+            return Integer.parseInt(duracao.replaceAll("[^\\d]", ""));
+
         }
         catch (Exception e) {
             return 0;
