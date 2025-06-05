@@ -53,7 +53,7 @@ Testes unitários e de integração serão adicionados em breve.
 git clone https://github.com/franze-ernesto/screenmatch.git
 
 # Acesse o diretório do projeto:
-cd vollmed
+cd screenmatch
 
 # Configure o MySQL conforme indicado abaixo e execute a aplicação com sua IDE ou via terminal:
 
