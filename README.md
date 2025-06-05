@@ -6,6 +6,8 @@ API REST desenvolvida em Java com Spring Boot para consultas de filmes e séries
 - Spring Boot
 - Lombok
 - ModelMapper
+- Flyway
+- JPA
 - Maven
 - Springdoc OpenAPI (Swagger) para documentação automática da API
 
